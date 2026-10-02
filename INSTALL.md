@@ -1,21 +1,23 @@
 # Installation and Testing
 
-## Quick Installation
+## Installation
 
-1. Copy the `ui/modules/apps/MW05VehicleHUD` folder into `Documents\BeamNG.drive\<version>\ui\modules\apps`.
-2. Launch BeamNG.drive, open Freeroam, then select `ESC` → `UI Apps`.
-3. Add `MW05 Vehicle HUD`. The app can be moved and resized in the layout editor.
-4. Add `MW05 Forced Induction` if the vehicle has a turbocharger or supercharger. It can be moved and resized in the same way.
+1. Download `MW05BeamNG.zip` from the [latest GitHub release](https://github.com/deliciousTic-Tac/MW05Beamng/releases/latest).
+2. Place the ZIP directly in `beamng\current\mods`, the `mods` folder inside your active BeamNG user folder. Do not extract it.
 
-## Installing the Mod ZIP
-
-From PowerShell:
-
-```powershell
-.\build.ps1
+```text
+beamng\current\mods\MW05BeamNG.zip
 ```
 
-Then place `MW05BeamNG.zip` in the `mods` folder inside your BeamNG user folder. The ZIP contains `ui/modules/apps/...`.
+To locate your active user folder, use the BeamNG launcher: `Manage User Folder` → `Open in Explorer`, then open `mods`. Create the `mods` folder if it does not exist.
+
+The ZIP contains all 10 MW05 applications and their resources under `ui/modules/apps/`.
+
+## Using the Apps
+
+1. Launch BeamNG.drive and open Freeroam.
+2. Select `ESC` → `UI Apps` and add the MW05 apps you want to use.
+3. Move and resize the apps in the layout editor. Vehicle-dependent gauges and controls are available when the vehicle exposes the corresponding data or functions.
 
 ## In-Game Checks
 
