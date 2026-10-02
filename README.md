@@ -1,19 +1,19 @@
 # MW05 BeamNG UI Apps
 
-Une app BeamNG.drive inspirée de la référence visuelle fournie :
+BeamNG.drive UI apps inspired by the provided visual reference:
 
-- `MW05 Vehicle HUD` : compte-tours vectoriel, vitesse KM/H, rapport, indicateurs de carburant/batterie, température et NOS uniquement lorsque la donnée réelle existe.
-- `MW05 Forced Induction` : cadran de pression turbo/compresseur, aiguille réactive et affichage décimal en PSI ou en bar (cliquer sur l’unité) lorsque le véhicule publie `boost` et `boostMax`.
-- `MW05 Oil Pressure` : même cadran pour la pression d’huile, avec affichage décimal en PSI ou en bar lorsque le véhicule publie une valeur de pression d’huile.
-- `MW05 Minimap` : application indépendante qui reprend le moteur natif de la minimap BeamNG pour la carte, les routes, la position et l’orientation du véhicule, avec un habillage circulaire sombre et un anneau segmenté.
-- `MW05 Powertrain Dial` : commande compacte au style MW05 avec molette 2H / 4H / 4Lo, sélecteurs Hi/Lo et Open/Lock lorsque le véhicule les expose, ainsi que les boutons natifs de différentiel et d’essieu moteur adaptés à l’habillage sombre et orange.
+- `MW05 Vehicle HUD`: vector tachometer, speed in KM/H, gear indicator, fuel/battery indicators, temperature, and NOS, shown only when real data is available.
+- `MW05 Forced Induction`: turbo/supercharger boost gauge with a responsive needle and a decimal readout in PSI or bar (click the unit to switch), available when the vehicle exposes `boost` and `boostMax`.
+- `MW05 Oil Pressure`: the same gauge design for oil pressure, with a decimal readout in PSI or bar when the vehicle exposes an oil pressure value.
+- `MW05 Minimap`: a standalone app that uses BeamNG's native minimap engine for the map, roads, vehicle position, and orientation, with a dark circular design and a segmented ring.
+- `MW05 Powertrain Dial`: compact MW05-style controls with a 2H / 4H / 4Lo dial, Hi/Lo and Open/Lock selectors when the vehicle exposes them, and native differential and driven-axle buttons adapted to the dark and orange design.
 
-## Données utilisées
+## Data Sources
 
-Le HUD s’abonne au stream BeamNG `electrics` et utilise `wheelspeed`, `rpmTacho`, `gear`, `gearIndex`, `fuel` et `oil`. Les valeurs optionnelles sont découvertes dans l’objet reçu sans jamais afficher une jauge NOS, batterie ou température numérique fictive. L’app Forced Induction utilise `boost` et `boostMax`, exprimés en PSI par BeamNG. L’app Oil Pressure accepte `oilPressure` en bar ainsi que les variantes explicites publiées par certains véhicules ou mods.
+The HUD subscribes to BeamNG's `electrics` stream and uses `wheelspeed`, `rpmTacho`, `gear`, `gearIndex`, `fuel`, and `oil`. Optional values are detected in the received object; NOS, battery, and numeric temperature displays never show fabricated data. The Forced Induction app uses `boost` and `boostMax`, which BeamNG reports in PSI. The Oil Pressure app accepts `oilPressure` in bar, as well as explicit variants exposed by certain vehicles or mods.
 
-## Développement
+## Development
 
-Le dossier est copiable tel quel dans `<Userfolder>\ui\modules\apps`. Le script `build.ps1` produit aussi un ZIP de mod avec des chemins internes en `/`.
+The directory can be copied as is into `<Userfolder>\ui\modules\apps`. The `build.ps1` script also creates a mod ZIP archive with internal paths using `/` separators.
 
-Le mini aperçu statique `preview.html` sert à vérifier la composition visuelle sans lancer le jeu ; il ne remplace pas le test en jeu des streams et événements BeamNG. La minimap délègue volontairement son rendu au backend natif du jeu afin de conserver son positionnement exact.
+The small static `preview.html` preview lets you check the visual layout without launching the game; it does not replace in-game testing of BeamNG streams and events. The minimap delegates rendering to the game's native backend to maintain accurate positioning.

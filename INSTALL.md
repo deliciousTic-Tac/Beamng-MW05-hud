@@ -1,27 +1,27 @@
-# Installation et test
+# Installation and Testing
 
-## Installation rapide
+## Quick Installation
 
-1. Copiez le dossier `ui/modules/apps/MW05VehicleHUD` dans `Documents\BeamNG.drive\<version>\ui\modules\apps`.
-2. Lancez BeamNG.drive, ouvrez Freeroam puis `ESC` → `UI Apps`.
-3. Ajoutez `MW05 Vehicle HUD`. L’app reste déplaçable et redimensionnable via l’éditeur de layout.
-4. Ajoutez `MW05 Forced Induction` si le véhicule possède un turbo ou un compresseur. Elle reste déplaçable et redimensionnable de la même manière.
+1. Copy the `ui/modules/apps/MW05VehicleHUD` folder into `Documents\BeamNG.drive\<version>\ui\modules\apps`.
+2. Launch BeamNG.drive, open Freeroam, then select `ESC` → `UI Apps`.
+3. Add `MW05 Vehicle HUD`. The app can be moved and resized in the layout editor.
+4. Add `MW05 Forced Induction` if the vehicle has a turbocharger or supercharger. It can be moved and resized in the same way.
 
-## Installation par mod ZIP
+## Installing the Mod ZIP
 
-Depuis PowerShell :
+From PowerShell:
 
 ```powershell
 .\build.ps1
 ```
 
-Placez ensuite `MW05BeamNG.zip` dans le dossier `mods` de l’utilisateur BeamNG. Le ZIP contient `ui/modules/apps/...`.
+Then place `MW05BeamNG.zip` in the `mods` folder inside your BeamNG user folder. The ZIP contains `ui/modules/apps/...`.
 
-## Vérifications en jeu
+## In-Game Checks
 
-- Vérifier 0, 50, 130 et 200+ km/h.
-- Vérifier ralenti, mi-régime, rupteur, marche arrière, neutre et changements rapides.
-- Vérifier un véhicule avec carburant, un véhicule électrique et un véhicule sans NOS.
-- Vérifier un véhicule turbo/compresseur et un véhicule atmosphérique : la pression et l’app doivent rester masquées si `boost` n’est pas publié.
+- Check the display at 0, 50, 130, and 200+ km/h.
+- Check idle, mid-range RPM, the rev limiter, reverse, neutral, and rapid gear changes.
+- Test a fuel-powered vehicle, an electric vehicle, and a vehicle without NOS.
+- Test a turbocharged/supercharged vehicle and a naturally aspirated vehicle: the boost pressure display and the app must remain hidden if `boost` is not exposed.
 
-La température numérique et le NOS restent masqués si le véhicule ne publie pas une valeur correspondante dans `electrics`. C’est volontaire pour ne pas présenter une information inventée.
+The numeric temperature display and NOS remain hidden if the vehicle does not expose a corresponding value in `electrics`. This is intentional to avoid displaying fabricated data.
