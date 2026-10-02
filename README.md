@@ -1,5 +1,7 @@
 # MW05 BeamNG UI Apps
 
+This project was created using artificial intelligence (AI), under human direction.
+
 BeamNG.drive UI apps inspired by the provided visual reference:
 
 - `MW05 Vehicle HUD`: vector tachometer, speed in KM/H, gear indicator, fuel/battery indicators, temperature, and NOS, shown only when real data is available.
