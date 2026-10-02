@@ -1,0 +1,17 @@
+{
+  "name": "MW05 Forced Induction",
+  "appName": "MW05ForcedInduction",
+  "author": "DeliciousTic-Tac",
+  "version": "0.1.1",
+  "description": "Turbo and supercharger pressure gauge with decimal PSI/bar display",
+  "directive": "mw05ForcedInduction",
+  "domElement": "<mw05-forced-induction></mw05-forced-induction>",
+  "types": ["ui.apps.categories.info", "ui.apps.categories.racing"],
+  "css": {
+    "width": "320px",
+    "height": "320px",
+    "top": "20px",
+    "left": "20px"
+  },
+  "preserveAspectRatio": true
+}

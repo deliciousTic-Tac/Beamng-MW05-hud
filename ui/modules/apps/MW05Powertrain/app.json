@@ -1,0 +1,17 @@
+{
+  "name": "MW05 Powertrain",
+  "appName": "MW05Powertrain",
+  "author": "DeliciousTic-Tac",
+  "version": "0.1.0",
+  "description": "Powertrain controls with vehicle-dependent functions",
+  "directive": "mw05Powertrain",
+  "domElement": "<mw05-powertrain></mw05-powertrain>",
+  "types": ["ui.apps.categories.info", "ui.apps.categories.racing"],
+  "css": {
+    "width": "220px",
+    "height": "220px",
+    "top": "20px",
+    "right": "20px"
+  },
+  "preserveAspectRatio": true
+}

@@ -1,0 +1,22 @@
+.mw05-ignition { width:100%; height:100%; position:relative; overflow:visible; user-select:none; }
+.mw05-ignition-svg { width:calc(100% - 20px); height:calc(100% - 25px); display:block; overflow:visible; cursor:pointer; }
+.mw05-ignition-shadow { fill:#07090b; fill-opacity:.62; }
+.mw05-ignition-backplate { fill:#1d2024; stroke:#0a0b0d; stroke-width:10; }
+.mw05-ignition-ring { fill:#282c31; stroke:#777d85; stroke-width:4; }
+.mw05-ignition-inner { fill:url(#mw05IgnitionMetal); stroke:#151a1e; stroke-width:7; }
+.mw05-ignition-brushed { fill:none; stroke:#eef1f2; stroke-width:1.4; stroke-opacity:.2; stroke-dasharray:3 5; }
+.mw05-ignition-scale { fill:none; stroke:#6c737b; stroke-width:3; stroke-linecap:round; }
+.mw05-ignition-mark { fill:#c7cbd0; font:700 23px Arial,sans-serif; text-anchor:middle; letter-spacing:1px; }
+.mw05-ignition-mark-acc { font-size:20px; }
+.mw05-ignition-mark.is-active { fill:#ffab63; filter:url(#mw05IgnitionGlow); }
+.mw05-key { transform-origin:256px 256px; transition:transform 150ms cubic-bezier(.2,.8,.25,1); }
+.mw05-key-shaft { fill:#171a1e; stroke:#050607; stroke-width:7; stroke-linejoin:round; }
+.mw05-key-facet { fill:#4a515a; fill-opacity:.68; }
+.mw05-key-head { fill:#20252b; stroke:#07090b; stroke-width:7; }
+.mw05-key-slot { fill:#858b92; }
+.mw05-key-shine { fill:#d4d7d9; fill-opacity:.34; }
+.mw05-key-pivot { fill:#ffab63; stroke:#0a0b0d; stroke-width:8; }
+.mw05-ignition-esc { position:absolute; right:15px; bottom:20px; width:30px; height:30px; padding:0; border:0; background:transparent; cursor:pointer; }
+.mw05-ignition-esc svg { width:29px; height:29px; filter:drop-shadow(1px 2px 1px rgba(0,0,0,.65)); }
+.mw05-ignition-esc:hover svg { transform:scale(1.08); filter:drop-shadow(0 0 3px rgba(255,255,255,.72)); }
+.mw05-ignition-esc-light { stroke:#111; stroke-width:1px; }

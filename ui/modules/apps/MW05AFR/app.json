@@ -1,0 +1,17 @@
+{
+  "name": "MW05 AFR",
+  "appName": "MW05AFR",
+  "author": "DeliciousTic-Tac",
+  "version": "0.1.0",
+  "description": "Digital air-fuel ratio display",
+  "directive": "mw05Afr",
+  "domElement": "<mw05-afr></mw05-afr>",
+  "types": ["ui.apps.categories.info", "ui.apps.categories.racing"],
+  "css": {
+    "width": "220px",
+    "height": "120px",
+    "top": "20px",
+    "left": "20px"
+  },
+  "preserveAspectRatio": true
+}

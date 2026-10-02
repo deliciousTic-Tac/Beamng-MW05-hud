@@ -1,0 +1,17 @@
+{
+  "name": "MW05 Minimap",
+  "appName": "MW05Minimap",
+  "author": "DeliciousTic-Tac",
+  "version": "0.1.0",
+  "description": "Native BeamNG minimap renderer in a movable UI app",
+  "directive": "mw05Minimap",
+  "domElement": "<mw05-minimap></mw05-minimap>",
+  "types": ["ui.apps.categories.info", "ui.apps.categories.racing"],
+  "css": {
+    "width": "300px",
+    "height": "300px",
+    "left": "5px",
+    "bottom": "5px"
+  },
+  "preserveAspectRatio": true
+}

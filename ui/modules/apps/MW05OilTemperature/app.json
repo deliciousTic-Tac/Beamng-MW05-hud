@@ -1,0 +1,17 @@
+{
+  "name": "MW05 Oil Temperature",
+  "appName": "MW05OilTemperature",
+  "author": "DeliciousTic-Tac",
+  "version": "0.1.0",
+  "description": "Engine oil temperature gauge with Celsius/Fahrenheit display",
+  "directive": "mw05OilTemperature",
+  "domElement": "<mw05-oil-temperature></mw05-oil-temperature>",
+  "types": ["ui.apps.categories.info", "ui.apps.categories.racing"],
+  "css": {
+    "width": "320px",
+    "height": "320px",
+    "top": "20px",
+    "left": "20px"
+  },
+  "preserveAspectRatio": true
+}

@@ -1,0 +1,17 @@
+{
+  "name": "MW05 Battery Voltage",
+  "appName": "MW05BatteryVoltage",
+  "author": "DeliciousTic-Tac",
+  "version": "0.1.0",
+  "description": "Battery voltage gauge with decimal display",
+  "directive": "mw05BatteryVoltage",
+  "domElement": "<mw05-battery-voltage></mw05-battery-voltage>",
+  "types": ["ui.apps.categories.info", "ui.apps.categories.racing"],
+  "css": {
+    "width": "320px",
+    "height": "320px",
+    "top": "20px",
+    "left": "20px"
+  },
+  "preserveAspectRatio": true
+}

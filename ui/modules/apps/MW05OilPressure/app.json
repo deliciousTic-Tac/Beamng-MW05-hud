@@ -1,0 +1,17 @@
+{
+  "name": "MW05 Oil Pressure",
+  "appName": "MW05OilPressure",
+  "author": "DeliciousTic-Tac",
+  "version": "0.1.0",
+  "description": "Oil pressure gauge with decimal PSI/bar display",
+  "directive": "mw05OilPressure",
+  "domElement": "<mw05-oil-pressure></mw05-oil-pressure>",
+  "types": ["ui.apps.categories.info", "ui.apps.categories.racing"],
+  "css": {
+    "width": "320px",
+    "height": "320px",
+    "top": "20px",
+    "left": "20px"
+  },
+  "preserveAspectRatio": true
+}

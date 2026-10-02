@@ -1,0 +1,46 @@
+.mw05-powertrain { width:100%; height:100%; position:relative; overflow:visible; user-select:none; }
+.mw05-transfer-case-svg { width:100%; height:100%; display:block; overflow:visible; }
+.mw05-powertrain.has-system-buttons .mw05-transfer-case-svg { height:calc(100% - 58px); }
+.mw05-gate path { fill:none; stroke-linecap:butt; stroke-linejoin:bevel; }
+.mw05-gate-backplate { fill:#151515; fill-opacity:.82; stroke:#5a402b; stroke-opacity:.8; stroke-width:1.5; }
+.mw05-gate-side { stroke:#1a1714; stroke-width:34; }
+.mw05-gate-rim { stroke:#dfdfdb; stroke-width:32; }
+.mw05-gate-slot { stroke:#090908; stroke-width:18; }
+.mw05-vertical-title { fill:#dfdfdb; font:800 11px Arial,Helvetica,sans-serif; text-anchor:middle; letter-spacing:1px; opacity:.82; }
+.mw05-vertical-label { cursor:pointer; }
+.mw05-vertical-label text { fill:#dfdfdb; font:800 16px Arial,Helvetica,sans-serif; text-anchor:middle; dominant-baseline:auto; pointer-events:none; opacity:.84; }
+.mw05-vertical-label-top text { paint-order:stroke; stroke:#151515; stroke-width:4px; stroke-linejoin:round; }
+.mw05-vertical-label .mw05-mode-detail { fill:#b29a80; font:9px Arial,Helvetica,sans-serif; }
+.mw05-vertical-label.is-engaged text { fill:#efb467; opacity:1; }
+.mw05-vertical-label.is-engaged .mw05-mode-detail { fill:#efb467; }
+.mw05-slot-label { cursor:pointer; }
+.mw05-slot-label rect { fill:#171514; fill-opacity:.96; stroke:#61442d; stroke-width:1.5; }
+.mw05-slot-label text { fill:#dfdfdb; font:800 21px Arial,Helvetica,sans-serif; pointer-events:none; opacity:.88; }
+.mw05-slot-label .mw05-mode-detail { fill:#b29a80; font:10px Arial,Helvetica,sans-serif; }
+.mw05-label-leader { fill:none; stroke:#6b5540; stroke-width:1.5; pointer-events:none; }
+.mw05-slot-label.is-engaged rect { fill:#683611; stroke:#efb467; stroke-width:2.5; }
+.mw05-slot-label.is-engaged text { fill:#fff0df; opacity:1; }
+.mw05-slot-label.is-engaged .mw05-label-leader { stroke:#efb467; stroke-width:2.5; }
+.mw05-slot-label:hover rect { stroke:#efb467; }
+.mw05-detent { fill:#24211e; stroke:#8b6c4d; stroke-width:2; }
+.mw05-detent.is-engaged { fill:#efb467; stroke:#ffdfb1; }
+.mw05-moving-lever { cursor:grab; }
+.mw05-moving-lever:active { cursor:grabbing; }
+.mw05-lever-foot { fill:#a86a32; }
+.mw05-lever-stem { fill:#efb467; }
+.mw05-lever-facet { fill:#a86a32; }
+.mw05-lever-knob { fill:#c8c6be; stroke:#dbd7cf; stroke-width:.8; }
+.mw05-lever-cap-rim { fill:none; stroke:#080909; stroke-width:2; }
+.mw05-lever-cap { fill:#c8c6be; }
+.mw05-status-panel { fill:#171514; fill-opacity:.94; stroke:#5e452f; stroke-width:1; }
+.mw05-shifter-status { fill:#efb467; font:800 12px Arial,Helvetica,sans-serif; text-anchor:middle; letter-spacing:1px; }
+.mw05-vertical-status { font-size:11px; letter-spacing:.6px; }
+.mw05-system-controls { display:flex; justify-content:center; align-items:center; gap:7px; height:54px; }
+.mw05-stock-system-button { position:relative; display:grid; place-items:center; width:42px; height:42px; padding:0; border:0; background:transparent; cursor:pointer; }
+.mw05-stock-system-button svg { width:38px; height:38px; filter:drop-shadow(1px 2px 1px rgba(0,0,0,.65)); }
+.mw05-stock-system-button.mw05-stock-driveline-button { width:35px; height:35px; }
+.mw05-stock-system-button.mw05-stock-driveline-button svg { width:32px; height:32px; }
+.mw05-stock-system-button:hover svg { transform:scale(1.08); filter:drop-shadow(0 0 3px rgba(239,180,103,.72)); }
+.mw05-system-tooltip { display:none; position:absolute; z-index:8; bottom:calc(100% + 5px); left:50%; transform:translateX(-50%); width:max-content; max-width:170px; padding:4px 6px; border:1px solid #6a4c31; border-radius:4px; background:rgba(21,19,17,.96); box-shadow:0 2px 5px rgba(0,0,0,.65); color:#efb467; font:800 10px Arial,Helvetica,sans-serif; line-height:1.1; white-space:nowrap; pointer-events:none; }
+.mw05-stock-system-button:hover .mw05-system-tooltip { display:block; }
+.mw05-stock-esc-light { stroke:#111; stroke-width:1px; }

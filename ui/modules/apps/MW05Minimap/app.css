@@ -1,0 +1,45 @@
+.mw05-minimap-app {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: visible;
+  pointer-events: none;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.mw05-minimap-frame {
+  position: absolute;
+  width: var(--mw05-map-size, 100%);
+  height: var(--mw05-map-size, 100%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  overflow: visible;
+  pointer-events: none;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+/* The grey dashed circle is inset by 0px and its 15px stroke therefore
+   extends 5px farther outward than the 10px black stroke inset by 5px. */
+.mw05-minimap-frame::before,
+.mw05-minimap-frame::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.mw05-minimap-frame::before {
+  inset: 5px;
+  border: 10px solid rgba(0, 0, 0, 0.96);
+  z-index: 1;
+}
+
+.mw05-minimap-frame::after {
+  inset: 0;
+  border: 15px dashed rgba(104, 106, 99, 0.95);
+  z-index: 2;
+}

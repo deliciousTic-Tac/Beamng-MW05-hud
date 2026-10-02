@@ -1,0 +1,17 @@
+{
+  "name": "MW05 Powertrain Dial",
+  "appName": "MW05PowertrainDial",
+  "author": "DeliciousTic-Tac",
+  "version": "0.1.6",
+  "description": "Compact MW05 drivetrain mode selector and native differential controls",
+  "directive": "mw05PowertrainDial",
+  "domElement": "<mw05-powertrain-dial></mw05-powertrain-dial>",
+  "types": ["ui.apps.categories.info", "ui.apps.categories.racing"],
+  "css": {
+    "width": "230px",
+    "height": "280px",
+    "top": "20px",
+    "right": "20px"
+  },
+  "preserveAspectRatio": true
+}
