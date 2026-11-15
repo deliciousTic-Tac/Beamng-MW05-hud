@@ -126,16 +126,7 @@
     return /inter[\s_-]?axle/.test(label) || label.indexOf('interdiff') >= 0;
   }
 
-  function addStylesheet(path) {
-    var link = document.querySelector('link[data-mw05-css="' + path + '"]');
-    if (link) return null;
-    link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = path;
-    link.setAttribute('data-mw05-css', path);
-    document.head.appendChild(link);
-    return link;
-  }
+  var addStylesheet = MW05Runtime.addStylesheet;
 
   angular.module('beamng.apps').directive('mw05Powertrain', [function () {
     return {
@@ -237,6 +228,7 @@
         var live = true;
         var api = typeof bngApi !== 'undefined' ? bngApi :
           (typeof window !== 'undefined' && window.bngApi ? window.bngApi : null);
+        var lua = MW05Runtime.luaClient(scope, api);
         var capabilityPollTimer = null;
         var capabilityKnown = false;
         var hasTransferCase = false;
@@ -447,11 +439,14 @@
         function requestMode(mode) {
           if (!scope.display.available || !points[mode]) return;
           animateTo(mode);
-          if(api && api.activeObjectLua) api.activeObjectLua(modeLua(mode),function(){
-            if(!live) return;
+          var isCurrent = vehicleState.guard();
+          if(api && api.activeObjectLua) lua.request('command-three-way', modeLua(mode),function(){
+            if(!isCurrent()) return;
+            clearTimeout(capabilityPollTimer);
+            capabilityPollTimer = setTimeout(pollTransferCaseCapability, 50);
             // Confirm from vehicle telemetry; never claim the mouse target is engaged.
-            setTimeout(function(){if(live && !dragging && latestMode) animateTo(latestMode);},400);
-          });
+            setTimeout(function(){if(isCurrent() && !dragging && latestMode) animateTo(latestMode);},400);
+          }, true);
         }
         scope.selectMode=requestMode;
         function pointer(event) {
@@ -518,11 +513,11 @@
         function verticalLua(kind, mode) {
           if (deviceState && deviceState[kind + 'Controller']) {
             var controllerMode = kind === 'range' ? (mode === 'LO' ? 'low' : 'high') : (mode === 'LOCKED' ? 'locked' : 'unlocked');
-            return 'controller.getControllerSafe(' + JSON.stringify(deviceState[kind + 'Controller']) + ').setDriveMode(' + JSON.stringify(controllerMode) + ')';
+            return 'controller.getControllerSafe(' + MW05Runtime.luaLiteral(deviceState[kind + 'Controller']) + ').setDriveMode(' + MW05Runtime.luaLiteral(controllerMode) + ')';
           }
           if (deviceState && deviceState[kind + 'Device']) {
             var deviceMode = kind === 'range' ? (mode === 'LO' ? 'low' : 'high') : (mode === 'LOCKED' ? deviceState.lockedValue : deviceState.unlockedValue);
-            return 'powertrain.setDeviceMode(' + JSON.stringify(deviceState[kind + 'Device']) + ', ' + JSON.stringify(deviceMode) + ')';
+            return 'powertrain.setDeviceMode(' + MW05Runtime.luaLiteral(deviceState[kind + 'Device']) + ', ' + MW05Runtime.luaLiteral(deviceMode) + ')';
           }
           var value = kind === 'range' ? (mode === 'LO' ? 'low' : 'high') : (mode === 'LOCKED' ? 'connected' : 'disconnected');
           var method = kind === 'range' ? 'setRangeMode' : 'set4WDMode';
@@ -531,13 +526,16 @@
         function requestVerticalMode(kind, mode) {
           if (!scope.display.available || !scope.display[kind + 'Available']) return;
           animateVertical(kind, mode);
-          if (api && api.activeObjectLua) api.activeObjectLua(verticalLua(kind, mode), function () {
-            if (!live || verticalDragging) return;
+          var isCurrent = vehicleState.guard();
+          if (api && api.activeObjectLua) lua.request('command-' + kind, verticalLua(kind, mode), function () {
+            if (!isCurrent() || verticalDragging) return;
+            clearTimeout(capabilityPollTimer);
+            capabilityPollTimer = setTimeout(pollTransferCaseCapability, 50);
             setTimeout(function () {
               var confirmed = kind === 'range' ? scope.display.rangeMode : scope.display.lockMode;
-              if (live && confirmed) animateVertical(kind, confirmed);
+              if (isCurrent() && confirmed) animateVertical(kind, confirmed);
             }, 400);
-          });
+          }, true);
         }
         scope.selectVerticalMode = requestVerticalMode;
         function isStockSystemButton(button) {
@@ -720,7 +718,7 @@
                 color: String(button.color || 'FF6600').replace('#', ''),
                 tooltip: button.tooltip || (button.icon === 'powertrain_esc' ? 'ESC' : 'Differential'),
                 onClick: button.onClick || '',
-                href: '/ui/assets/Sprites/svg-symbols.svg#' + button.icon
+                href: '/ui/assets/Sprites/svg-symbols.svg#' + MW05Runtime.differentialIcon(button)
               };
             }
             syncSystemButtons();
@@ -759,13 +757,16 @@
           applyState({ available: true, layout: 'three-way', mode: mode, source: 'powertrain_button' });
         });
 
+        var vehicleState = MW05Runtime.vehicleState(scope, resetVehicleControls);
+
         function pollTransferCaseCapability() {
           if (!live) return;
           if (api && typeof api.activeObjectLua === 'function') {
-            api.activeObjectLua(deviceQuery
-              .replace('__TRANSFER_BUTTON_DEVICE__', JSON.stringify(transferButtonDevice))
+            var accept = vehicleState.capture();
+            lua.request('devices', deviceQuery
+              .split('__TRANSFER_BUTTON_DEVICE__').join(MW05Runtime.luaLiteral(transferButtonDevice))
               .replace('__INTERAXLE_CONTROL__', hasInteraxleControl ? 'true' : 'false'), function (data) {
-              if (!live || !data) return;
+              if (!accept() || !data) return;
               if (data.hasInteraxle && !data.available) {
                 deviceState = data;
                 capabilityKnown = true;
@@ -780,8 +781,8 @@
                 applyState(data);
               }
             });
-            api.activeObjectLua(transferCaseCapabilityQuery, function (data) {
-              if (!live || deviceState) return;
+            if (!deviceState) lua.request('capabilities', transferCaseCapabilityQuery, function (data) {
+              if (!accept() || deviceState) return;
               capabilityKnown = true;
               hasTransferCase = !!(data && data.hasTransferCase);
               if (!hasTransferCase) {
@@ -795,10 +796,15 @@
               api.activeObjectLua('extensions.ui_simplePowertrainControl.updateButtons()');
             }
           }
-          capabilityPollTimer = setTimeout(pollTransferCaseCapability, 150);
+          capabilityPollTimer = setTimeout(pollTransferCaseCapability, 500);
         }
 
         function resetVehicleControls() {
+          detachDrag();
+          detachVerticalDrag();
+          stopAnimation();
+          stopVerticalAnimation('range');
+          stopVerticalAnimation('lock');
           systemButtons = {};
           syncSystemButtons();
           deviceState = null;
@@ -809,9 +815,10 @@
           latestMode = null;
           requestedSystemButtons = false;
           applyState({available:false});
+          if (capabilityPollTimer) clearTimeout(capabilityPollTimer);
+          pollTransferCaseCapability();
         }
-        scope.$on('VehicleChange', resetVehicleControls);
-        scope.$on('VehicleFocusChanged', resetVehicleControls);
+
 
         scope.$on('$destroy', function () {
           live = false;
@@ -822,7 +829,7 @@
           stopVerticalAnimation('lock');
           if (capabilityPollTimer) clearTimeout(capabilityPollTimer);
           StreamsManager.remove(streamsList);
-          if (stylesheet && stylesheet.parentNode) stylesheet.parentNode.removeChild(stylesheet);
+          if (stylesheet) stylesheet.release();
         });
 
         pollTransferCaseCapability();

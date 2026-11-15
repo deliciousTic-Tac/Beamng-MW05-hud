@@ -2,7 +2,7 @@
   "name": "MW05 Ignition",
   "appName": "MW05Ignition",
   "author": "DeliciousTic-Tac",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Animated ignition key driven by the vehicle ignition state",
   "directive": "mw05Ignition",
   "domElement": "<mw05-ignition></mw05-ignition>",

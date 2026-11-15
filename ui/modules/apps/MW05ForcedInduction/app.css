@@ -17,13 +17,13 @@
 .mw05-boost-turbo-icon { fill: none !important; stroke: #fff !important; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; opacity: .95; pointer-events: none; }
 .mw05-boost-shadow { fill: #000; opacity: .5; filter: blur(6px); }
 .mw05-boost-face { fill: #151515; fill-opacity: .22; stroke: #060606; stroke-width: 9; }
-.mw05-boost-redline { fill: #d95863; stroke: #d95863; stroke-width: 2; stroke-linejoin: round; opacity: .42; filter: url(#mw05BoostGlow); }
+.mw05-boost-redline { fill: #d95863; stroke: #d95863; stroke-width: 2; stroke-linejoin: round; opacity: .42; filter: var(--mw05BoostGlow); }
 .mw05-boost-track { fill: none; stroke: #252525; stroke-width: 18; stroke-linecap: butt; opacity: .86; }
 .mw05-boost-ticks line { stroke: #f0f0eb; stroke-width: 4; opacity: .8; }
 .mw05-boost-ticks .mw05-boost-major-tick { stroke-width: 7; opacity: 1; }
 .mw05-boost-numbers text { fill: #dfdfdb; stroke: #101010; stroke-width: 2px; paint-order: stroke; font-size: 31px; font-weight: 800; text-anchor: middle; dominant-baseline: middle; opacity: .82; }
 .mw05-boost-needle { transform-box: fill-box; transform-origin: 50% 50%; }
-.mw05-boost-needle path { fill: #edaa5c; stroke: none; filter: url(#mw05BoostNeedleGlow); }
+.mw05-boost-needle path { fill: #edaa5c; stroke: none; filter: var(--mw05BoostNeedleGlow); }
 .mw05-boost-needle circle { fill: #28292a; stroke: #111; stroke-width: 4; }
 .mw05-boost-needle .mw05-boost-pivot { fill: #edaa5c; stroke: #edaa5c; stroke-width: 1; }
 .mw05-boost-panel rect { fill: #efb467; stroke: #2e2218; stroke-width: 5; opacity: .96; }

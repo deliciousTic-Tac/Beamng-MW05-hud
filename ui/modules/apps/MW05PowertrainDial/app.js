@@ -3,13 +3,13 @@
  *
  * Compact companion to the full MW05 Powertrain app. The rotary selector
  * only visualises confirmed vehicle modes; stock differential and wheel-axle
- * buttons retain BeamNG's own icon and onClick command.
+ * buttons retain BeamNG's onClick command with consistent native locker icons.
  */
 (function () {
   'use strict';
 
-  var CSS_URL = '/ui/modules/apps/MW05PowertrainDial/app.css?v=0.1.6';
-  var POLL_INTERVAL_MS = 200;
+  var CSS_URL = '/ui/modules/apps/MW05PowertrainDial/app.css?v=0.1.11';
+  var POLL_INTERVAL_MS = 500;
   // Native powertrain buttons are also changed by vehicle shortcuts. Refreshing
   // their exported state a few times per second keeps the app in sync without
   // issuing a Lua request for every electrics frame.
@@ -105,16 +105,7 @@
     return /(?:closed|locked|connected|lsd_active|torque_vectoring)/.test(icon);
   }
 
-  function addStylesheet(path) {
-    var link = document.querySelector('link[data-mw05-css="' + path + '"]');
-    if (link) return null;
-    link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = path;
-    link.setAttribute('data-mw05-css', path);
-    document.head.appendChild(link);
-    return link;
-  }
+  var addStylesheet = MW05Runtime.addStylesheet;
 
   angular.module('beamng.apps').directive('mw05PowertrainDial', [function () {
     return {
@@ -160,6 +151,7 @@
         var stylesheet = addStylesheet(CSS_URL);
         var streamsList = ['electrics'];
         var api = typeof bngApi !== 'undefined' ? bngApi : (typeof window !== 'undefined' ? window.bngApi : null);
+        var lua = MW05Runtime.luaClient(scope, api);
         var live = true;
         var pollTimer = null;
         var latestElectrics = {};
@@ -246,15 +238,56 @@
           for _,controller in pairs(controller.getControllersByType("driveModes") or {}) do
             local label=lower((controller.name or "") .. " " .. (controller.uiName or ""))
             local key=controller.getCurrentDriveModeKey and controller.getCurrentDriveModeKey() or nil
+            -- A drive-mode controller can coordinate a device, electrics and
+            -- the stock UI. Discover its device settings rather than bypassing
+            -- it with a raw setDeviceMode (Percheron rangebox/front drive).
+            local bindings={}
+            local knownModes={}
+            if controller.getDriveModeData and controller.setDriveMode then
+              for _,modeKey in ipairs({"high","hi","low","lo","unlocked","open","disconnected","locked","connected"}) do
+                local data=controller.getDriveModeData(modeKey)
+                if data then knownModes[modeKey]=true end
+                for _,setting in pairs(data and data.settings or {}) do
+                  if setting.type=="powertrainDeviceMode" and setting.deviceName and setting.mode then
+                    local binding=bindings[setting.deviceName] or {}
+                    if not binding[setting.mode] then binding[setting.mode]=modeKey end
+                    bindings[setting.deviceName]=binding
+                  end
+                end
+              end
+            end
+            local rangeBinding=result.rangeDevice and bindings[result.rangeDevice]
+            if rangeBinding and rangeBinding.high and rangeBinding.low then
+              result.rangeController=controller.name
+              result.rangeHighMode=rangeBinding.high result.rangeLowMode=rangeBinding.low
+            end
+            local lockBinding=result.lockDevice and bindings[result.lockDevice]
+            if lockBinding and lockBinding[result.lockedValue] and lockBinding[result.unlockedValue] then
+              result.lockController=controller.name
+              result.lockLockedMode=lockBinding[result.lockedValue] result.lockOpenMode=lockBinding[result.unlockedValue]
+            end
+            local controlsOutputShaft=false
+            for _,shaft in pairs(result.outputShafts) do
+              local binding=bindings[shaft.id]
+              if binding and binding.connected and binding.disconnected then
+                shaft.controller=controller.name
+                shaft.connectedMode=binding.connected shaft.disconnectedMode=binding.disconnected
+                controlsOutputShaft=true
+              end
+            end
             local interaxle=label:find("interaxle",1,true) or label:find("inter axle",1,true) or label:find("inter-axle",1,true)
             local nonTransferDifferential=(label:find("differential",1,true) or label:find("diff",1,true)) and not label:find("transfer",1,true)
             if interaxle then result.hasInteraxle=true end
             if nonTransferDifferential then result.hasNonTransferDifferential=true end
             if not result.rangeAvailable and (label:find("range",1,true) or label:find("hi/lo",1,true)) and (key=="high" or key=="hi" or key=="low" or key=="lo") then
               result.rangeAvailable=true result.rangeController=controller.name result.rangeMode=(key=="low" or key=="lo") and "LO" or "HI" result.rangeTooltip=(controller.uiName and tostring(controller.uiName)~="" and tostring(controller.uiName)) or "Rangebox"
+              result.rangeHighMode=(knownModes.high and "high") or (knownModes.hi and "hi") or ((key=="hi" or key=="lo") and "hi" or "high")
+              result.rangeLowMode=(knownModes.low and "low") or (knownModes.lo and "lo") or ((key=="hi" or key=="lo") and "lo" or "low")
             end
-            if not nonTransferDifferential and not result.lockAvailable and label:find("transfer",1,true) and (key=="open" or key=="unlocked" or key=="locked" or key=="connected") then
+            if not controlsOutputShaft and not nonTransferDifferential and not result.lockAvailable and label:find("transfer",1,true) and (key=="open" or key=="unlocked" or key=="locked" or key=="connected") then
               result.lockAvailable=true result.lockController=controller.name result.lockMode=(key=="locked" or key=="connected") and "LOCKED" or "OPEN" result.lockTooltip=(controller.uiName and tostring(controller.uiName)~="" and tostring(controller.uiName)) or "Transfer case"
+              result.lockOpenMode=(knownModes.unlocked and "unlocked") or (knownModes.open and "open") or (knownModes.disconnected and "disconnected") or ((key=="open" and "open") or (key=="connected" and "disconnected") or "unlocked")
+              result.lockLockedMode=(knownModes.locked and "locked") or (knownModes.connected and "connected") or (key=="connected" and "connected" or "locked")
             end
           end
           result.available=result.rangeAvailable or result.lockAvailable
@@ -300,10 +333,10 @@
             if (fromElectrics.threeWay) state.mode=fromElectrics.mode;
             return state;
           }
-          // Electrics remain useful for live position updates, but never create
-          // a rangebox or transfercase selector without a discovered control.
-          if (state.rangeAvailable && fromElectrics.rangeAvailable) state.rangeMode=fromElectrics.rangeMode;
-          if (state.lockAvailable && fromElectrics.lockAvailable) state.lockMode=fromElectrics.lockMode;
+          // A named device/controller snapshot is authoritative. Generic
+          // electrics may describe a different device or a stale controller.
+          if (state.rangeAvailable && !state.rangeDevice && !state.rangeController && fromElectrics.rangeAvailable) state.rangeMode=fromElectrics.rangeMode;
+          if (state.lockAvailable && !state.lockDevice && !state.lockController && fromElectrics.lockAvailable) state.lockMode=fromElectrics.lockMode;
           state.available=!!(state.rangeAvailable || state.lockAvailable);
           return state;
         }
@@ -356,6 +389,9 @@
               side: side,
               active: !!shaft.active,
               angle: shaft.active ? -240 : -120,
+              controller: shaft.controller,
+              connectedMode: shaft.connectedMode,
+              disconnectedMode: shaft.disconnectedMode,
               tooltip: tooltip
             };
           });
@@ -372,43 +408,66 @@
         function splitLua(kind, mode) {
           var state = discoveredState || {};
           var controllerName = state[kind + 'Controller'];
-          if (controllerName) return 'local c=controller.getControllerSafe(' + JSON.stringify(controllerName) + ') if c and c.setDriveMode then c.setDriveMode(' + JSON.stringify(kind === 'range' ? (mode === 'LO' ? 'low' : 'high') : (mode === 'LOCKED' ? 'locked' : 'unlocked')) + ') end';
+          if (controllerName) {
+            var controllerMode = kind === 'range'
+              ? (mode === 'LO' ? (state.rangeLowMode || 'low') : (state.rangeHighMode || 'high'))
+              : (mode === 'LOCKED' ? (state.lockLockedMode || 'locked') : (state.lockOpenMode || 'unlocked'));
+            return 'local c=controller.getControllerSafe(' + MW05Runtime.luaLiteral(controllerName) + ') if c and c.setDriveMode then c.setDriveMode(' + MW05Runtime.luaLiteral(controllerMode) + ') end';
+          }
           if (state[kind + 'Device']) {
             var deviceMode = kind === 'range' ? (mode === 'LO' ? 'low' : 'high') : (mode === 'LOCKED' ? state.lockedValue : state.unlockedValue);
-            return 'powertrain.setDeviceMode(' + JSON.stringify(state[kind + 'Device']) + ', ' + JSON.stringify(deviceMode) + ')';
+            return 'powertrain.setDeviceMode(' + MW05Runtime.luaLiteral(state[kind + 'Device']) + ', ' + MW05Runtime.luaLiteral(deviceMode) + ')';
           }
           var method = kind === 'range' ? 'setRangeMode' : 'set4WDMode';
           var fallback = kind === 'range' ? (mode === 'LO' ? 'low' : 'high') : (mode === 'LOCKED' ? 'connected' : 'disconnected');
           return '(function() for _,v in pairs(controller.getControllersByType("4wd") or {}) do if v.' + method + ' then v.' + method + '("' + fallback + '") return true end end return false end)()';
         }
 
-        function request(command) {
+        function request(command, topic) {
           if (!api || typeof api.activeObjectLua !== 'function') return;
-          api.activeObjectLua(command, function () { if (live) setTimeout(applyState, 250); });
+          var generation = vehicleGeneration;
+          // bngApi embeds callback requests in a Lua expression. A statement
+          // such as "local c=..." must be wrapped, or the click never executes.
+          lua.request('command-' + topic, '(function()\n' + command + '\nreturn true\nend)()', function () {
+            if (!live || generation !== vehicleGeneration) return;
+            setTimeout(function () {
+              if (!live || generation !== vehicleGeneration) return;
+              clearTimeout(pollTimer);
+              pollState();
+            }, 50);
+          }, true);
         }
 
         scope.selectThreeWay = function (mode) {
           if (!scope.display.threeWay || ['H2','H4','L4'].indexOf(mode) < 0) return;
-          request(threeWayLua(mode));
+          request(threeWayLua(mode), 'three-way');
         };
         scope.cycleThreeWay = function () {
           var modes=['H2','H4','L4'];
           scope.selectThreeWay(modes[(modes.indexOf(scope.display.mode)+1)%modes.length]);
         };
         scope.selectSplit = function (kind, mode) {
+          if (kind !== 'range' && kind !== 'lock') return;
+          if ((kind === 'range' ? ['HI','LO'] : ['OPEN','LOCKED']).indexOf(mode) < 0) return;
           if (kind === 'range' && !scope.display.rangeAvailable) return;
           if (kind === 'lock' && !scope.display.lockAvailable) return;
-          request(splitLua(kind, mode));
+          request(splitLua(kind, mode), kind);
         };
         scope.cycleSplit = function (kind) {
           scope.selectSplit(kind, kind === 'range' ? (scope.display.rangeMode === 'HI' ? 'LO' : 'HI') : (scope.display.lockMode === 'OPEN' ? 'LOCKED' : 'OPEN'));
         };
         scope.activateSystemButton = function (button) {
-          if (button && button.onClick) request(button.onClick);
+          if (button && button.onClick) request(button.onClick, 'native-' + button.id);
         };
         scope.activateOutputShaft = function (side) {
           var shaft = outputShafts[side];
-          if (shaft) request('powertrain.toggleDeviceMode(' + JSON.stringify(shaft.id) + ')');
+          if (!shaft) return;
+          if (shaft.controller && shaft.connectedMode && shaft.disconnectedMode) {
+            var mode = shaft.active ? shaft.disconnectedMode : shaft.connectedMode;
+            request('local c=controller.getControllerSafe(' + MW05Runtime.luaLiteral(shaft.controller) + ') if c and c.setDriveMode then c.setDriveMode(' + MW05Runtime.luaLiteral(mode) + ') end', 'shaft-' + side);
+          } else {
+            request('powertrain.toggleDeviceMode(' + MW05Runtime.luaLiteral(shaft.id) + ')', 'shaft-' + side);
+          }
         };
         scope.showNativeTooltip = function (tooltip) {
           scope.display.hoveredTooltip = tooltip || '';
@@ -446,7 +505,7 @@
           // Native button events may keep stale entries after a part change.
           else if (isDisconnectableOutputShaft(button)) return;
           else if (!isDrivelineButton(button)) return;
-          else systemButtons[id]={id:id,icon:button.icon,active:buttonIsActive(button),tooltip:button.tooltip || 'Differential',onClick:button.onClick || '',href:'/ui/assets/Sprites/svg-symbols.svg#' + button.icon};
+          else systemButtons[id]={id:id,icon:button.icon,active:buttonIsActive(button),tooltip:button.tooltip || 'Differential',onClick:button.onClick || '',href:'/ui/assets/Sprites/svg-symbols.svg#' + MW05Runtime.differentialIcon(button)};
           syncSystemButtons();
           scope.$evalAsync();
         });
@@ -464,7 +523,7 @@
           if (api && typeof api.activeObjectLua === 'function') {
             var queryGeneration = vehicleGeneration;
             var querySequence = ++deviceQuerySequence;
-            api.activeObjectLua(deviceQuery, function (state) {
+            lua.request('devices', deviceQuery, function (state) {
               if (!live || !state || queryGeneration !== vehicleGeneration || querySequence < appliedDeviceQuerySequence) return;
               appliedDeviceQuerySequence = querySequence;
               discoveredState=state;
@@ -478,6 +537,8 @@
         function resetVehicle() {
           vehicleGeneration++;
           latestElectrics={}; discoveredState=null; systemButtons={}; outputShafts={}; nextNativeButtonSyncAt=0; syncSystemButtons(); applyState();
+          if (pollTimer) clearTimeout(pollTimer);
+          pollState();
         }
         scope.$on('VehicleChange', resetVehicle);
         scope.$on('VehicleFocusChanged', resetVehicle);
@@ -485,7 +546,7 @@
           live=false;
           if (pollTimer) clearTimeout(pollTimer);
           StreamsManager.remove(streamsList);
-          if (stylesheet && stylesheet.parentNode) stylesheet.parentNode.removeChild(stylesheet);
+          if (stylesheet) stylesheet.release();
         });
         pollState();
       }

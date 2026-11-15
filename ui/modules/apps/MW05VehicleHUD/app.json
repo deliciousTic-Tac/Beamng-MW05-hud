@@ -2,7 +2,7 @@
   "name": "MW05 Vehicle HUD",
   "appName": "MW05VehicleHud",
   "author": "DeliciousTic-Tac",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "Arcade tachometer HUD inspired by NFS Most Wanted 2005",
   "directive": "mw05VehicleHud",
   "domElement": "<mw05-vehicle-hud></mw05-vehicle-hud>",

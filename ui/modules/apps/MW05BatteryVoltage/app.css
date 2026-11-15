@@ -22,7 +22,7 @@
 .mw05-oil-ticks .mw05-oil-major-tick { stroke-width: 7; opacity: 1; }
 .mw05-oil-numbers text { fill: #dfdfdb; stroke: #101010; stroke-width: 2px; paint-order: stroke; font-size: 31px; font-weight: 800; text-anchor: middle; dominant-baseline: middle; opacity: .82; }
 .mw05-oil-needle { transform-box: fill-box; transform-origin: 50% 50%; transition: transform 160ms linear; }
-.mw05-oil-needle path { fill: #edaa5c; stroke: none; filter: url(#mw05OilNeedleGlow); }
+.mw05-oil-needle path { fill: #edaa5c; stroke: none; filter: var(--mw05OilNeedleGlow); }
 .mw05-oil-needle circle { fill: #28292a; stroke: #111; stroke-width: 4; }
 .mw05-oil-needle .mw05-oil-pivot { fill: #edaa5c; stroke: #edaa5c; stroke-width: 1; }
 .mw05-oil-panel rect { fill: #efb467; stroke: #2e2218; stroke-width: 5; opacity: .96; }

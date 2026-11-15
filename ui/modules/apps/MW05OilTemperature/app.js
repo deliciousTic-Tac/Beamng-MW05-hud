@@ -9,7 +9,7 @@
   'use strict';
 
   var DEBUG = false;
-  var CSS_URL = '/ui/modules/apps/MW05OilTemperature/app.css';
+  var CSS_URL = '/ui/modules/apps/MW05OilTemperature/app.css?v=robust-20261109';
   // Oil-temperature scale: 0..150 °C.
   var SCALE_MIN_C = 0;
   var MIN_SCALE_MAX_C = 150;
@@ -54,13 +54,12 @@
   }
 
   function pressureRatio(valuePsi, minPsi, maxPsi) {
+    if (maxPsi <= minPsi) return 0;
     return clamp((valuePsi - minPsi) / (maxPsi - minPsi), 0, 1);
   }
 
   function scaleAngle(valuePsi, minPsi, maxPsi) {
-    if (valuePsi <= 0) {
-      return SCALE_START_ANGLE + pressureRatio(valuePsi, minPsi, 0) * (SCALE_ZERO_ANGLE - SCALE_START_ANGLE);
-    }
+    if (valuePsi <= 0) return SCALE_ZERO_ANGLE;
     return SCALE_ZERO_ANGLE + pressureRatio(valuePsi, 0, maxPsi) * (SCALE_END_ANGLE - SCALE_ZERO_ANGLE);
   }
 
@@ -174,20 +173,14 @@
     };
   }
 
-  function addStylesheet(path) {
-    var link = document.querySelector('link[data-mw05-css="' + path + '"]');
-    if (link) return null;
-    link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = path;
-    link.setAttribute('data-mw05-css', path);
-    document.head.appendChild(link);
-    return link;
-  }
+  var addStylesheet = MW05Runtime.addStylesheet;
+
+  arcPath = MW05Runtime.memoize(arcPath, 16);
+  redlineBandPath = MW05Runtime.memoize(redlineBandPath, 16);
 
   angular.module('beamng.apps').directive('mw05OilTemperature', [function () {
     return {
-      template:
+      template: MW05Runtime.svgTemplate(
         '<div class="mw05-oil-pressure">' +
           '<svg class="mw05-oil-svg" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" aria-label="MW05 engine oil temperature gauge">' +
             '<defs><filter id="mw05OilGlow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="mw05OilNeedleGlow" x="-15%" y="-15%" width="130%" height="130%"><feGaussianBlur stdDeviation="1" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
@@ -202,7 +195,7 @@
             '<g class="mw05-oil-readout" transform="translate(0 30)"><g class="mw05-oil-panel"><rect x="191" y="315" width="130" height="67" rx="11"/><text class="mw05-oil-ghost" x="256" y="358.5">{{display.ghostText}}</text><text class="mw05-oil-value" ng-attr-x="{{display.valueX}}" y="358.5">{{display.valueText}}</text></g><text class="mw05-oil-unit" x="256" y="409" ng-click="toggleUnit()" title="Cliquer pour changer d’unité">{{display.unit}}</text></g>' +
           '</svg>' +
           '<div class="mw05-oil-debug" ng-if="debug">Oil temperature: {{data.value | number:1}} °C<br>Max: {{data.max | number:1}} °C<br>Source: {{data.source}}<br>Mode: {{data.simulated ? \'SIM\' : \'LIVE\'}}<br>Keys: {{data.keys.join(\', \')}}</div>' +
-        '</div>',
+        '</div>'),
       replace: true,
       restrict: 'EA',
       link: function (scope) {
@@ -210,15 +203,15 @@
         // not consistently as a window property in every CEF build.
         var api = typeof bngApi !== 'undefined' ? bngApi :
           (typeof window !== 'undefined' && window.bngApi ? window.bngApi : null);
+        var lua = MW05Runtime.luaClient(scope, api);
         var stylesheet = addStylesheet(CSS_URL);
-        var streamsList = ['electrics', 'engineInfo', 'engineThermalData'];
+        var streamsList = ['electrics', 'engineThermalData'];
         StreamsManager.add(streamsList);
         scope.ticks = makeTicks();
         scope.labels = makeLabels(MIN_SCALE_MAX_C, '°C');
         scope.debug = DEBUG;
         var latestElectrics = {};
         var latestThermalData = {};
-        var latestEngineInfo = [];
         var latestLuaData = {};
         var temperaturePollTimer = null;
         var oilTemperatureLuaQuery = '(function() local e=powertrain.getDevice("mainEngine") local t=e and e.thermals local d=t and t.debugData and t.debugData.engineThermalData return {oilTemperature=t and (t.oilTemperature or t.oiltemp), debugOilTemperature=d and (d.oilTemperature or d.oiltemp)} end)()';
@@ -234,6 +227,9 @@
           unit: '°C'
         };
         var live = true;
+        var requestRender = MW05Runtime.renderer(scope, updateDisplay);
+        var publish = MW05Runtime.publisher(scope);
+        var vehicleState = MW05Runtime.vehicleState(scope, resetVehicle);
         var lastGameTemperatureUnit = null;
 
         function setTemperatureUnit(unit) {
@@ -241,6 +237,7 @@
           if (scope.display.unit === unit) return;
           scope.display.unit = unit;
           scope.display.maxDisplay = null;
+          requestRender();
           scope.display.ghostText = '888';
         }
 
@@ -261,21 +258,22 @@
           // provides the smoothing without delaying or blocking new values.
           scope.display.needleAngle = hasTemperature ? scaleAngle(scope.data.value, minC, scaleMaxC) : SCALE_ZERO_ANGLE;
           scope.display.redlinePath = redlineBandPath(redlineStartAngle(configuredMaxC, scaleMaxC, hasTemperature, scope.display.unit), SCALE_END_ANGLE, 215, 187);
-          scope.display.trackPath = arcPath(SCALE_START_ANGLE, SCALE_END_ANGLE, 207);
           scope.display.valueText = hasTemperature ? formatTemperature(scope.data.value, scope.display.unit) : '--';
           scope.display.valueX = digitalValueX(scope.display.valueText, scope.display.unit);
           scope.display.ghostText = '888';
           if (scaleChanged) { scope.ticks = makeTicks(); scope.labels = makeLabels(scaleMaxC, scope.display.unit); }
-          scope.$evalAsync();
-          requestAnimationFrame(updateDisplay);
+          publish();
         }
 
         function pollOilTemperature() {
           if (!live) return;
           if (api && typeof api.activeObjectLua === 'function') {
-            api.activeObjectLua(oilTemperatureLuaQuery, function (data) {
+            var accept = vehicleState.capture();
+            lua.request('oil-temperature', oilTemperatureLuaQuery, function (data) {
+              if (!accept()) return;
               latestLuaData = data || {};
               scope.data = readOilTemperature(latestElectrics, latestThermalData, latestLuaData);
+              requestRender();
             });
           }
           temperaturePollTimer = setTimeout(pollOilTemperature, 250);
@@ -284,8 +282,8 @@
         scope.$on('streamsUpdate', function (event, streams) {
           latestElectrics = streams && streams.electrics || {};
           latestThermalData = streams && streams.engineThermalData || {};
-          latestEngineInfo = streams && streams.engineInfo || [];
           scope.data = readOilTemperature(latestElectrics, latestThermalData, latestLuaData);
+          requestRender();
         });
 
         scope.$on('SettingsChanged', function (event, data) {
@@ -295,11 +293,17 @@
           lastGameTemperatureUnit = gameUnit;
         });
 
+        function resetVehicle() {
+          latestElectrics = {}; latestThermalData = {}; latestLuaData = {};
+          scope.data = readOilTemperature({}, {}, {});
+          requestRender();
+        }
+
         scope.$on('$destroy', function () {
           live = false;
           if (temperaturePollTimer) clearTimeout(temperaturePollTimer);
           StreamsManager.remove(streamsList);
-          if (stylesheet && stylesheet.parentNode) stylesheet.parentNode.removeChild(stylesheet);
+          if (stylesheet) stylesheet.release();
         });
         pollOilTemperature();
         if (api && typeof api.engineLua === 'function') api.engineLua('settings.notifyUI()');

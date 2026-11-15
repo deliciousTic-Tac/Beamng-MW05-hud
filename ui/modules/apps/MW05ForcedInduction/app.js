@@ -9,7 +9,7 @@
   'use strict';
 
   var DEBUG = false;
-  var CSS_URL = '/ui/modules/apps/MW05ForcedInduction/app.css?v=0.1.1';
+  var CSS_URL = '/ui/modules/apps/MW05ForcedInduction/app.css?v=robust-20261109';
   var BAR_PER_PSI = 0.0689475729;
   var INHG_PER_PSI = 2.0360206576;
   var MIN_SCALE_BAR = 3;
@@ -174,20 +174,14 @@
     return { available: available, value: boost, max: boostMax, keys: Object.keys(values) };
   }
 
-  function addStylesheet(path) {
-    var link = document.querySelector('link[data-mw05-css="' + path + '"]');
-    if (link) return null;
-    link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = path;
-    link.setAttribute('data-mw05-css', path);
-    document.head.appendChild(link);
-    return link;
-  }
+  var addStylesheet = MW05Runtime.addStylesheet;
+
+  arcPath = MW05Runtime.memoize(arcPath, 16);
+  redlineBandPath = MW05Runtime.memoize(redlineBandPath, 16);
 
   angular.module('beamng.apps').directive('mw05ForcedInduction', [function () {
     return {
-      template:
+      template: MW05Runtime.svgTemplate(
         '<div class="mw05-forced-induction" ng-show="display.available">' +
           '<svg class="mw05-boost-svg" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" aria-label="MW05 forced induction gauge">' +
             '<defs>' +
@@ -217,7 +211,7 @@
             '</g>' +
           '</svg>' +
           '<div class="mw05-boost-debug" ng-if="debug">Boost: {{data.value | number:1}} PSI<br>Max: {{data.max | number:1}} PSI<br>Keys: {{data.keys.join(\', \')}}</div>' +
-        '</div>',
+        '</div>'),
       replace: true,
       restrict: 'EA',
       link: function (scope) {
@@ -240,6 +234,8 @@
           unit: 'PSI'
         };
         var live = true;
+        var requestRender = MW05Runtime.renderer(scope, updateDisplay);
+        var publish = MW05Runtime.publisher(scope);
         var lastGamePressureUnit = null;
 
         function setPressureUnit(unit) {
@@ -247,6 +243,7 @@
           if (scope.display.unit === unit) return;
           scope.display.unit = unit;
           scope.display.maxDisplay = null;
+          requestRender();
           scope.display.ghostText = ghostTextForUnit(unit);
         }
 
@@ -257,6 +254,7 @@
         function updateDisplay() {
           if (!live) return;
           scope.display.available = scope.data.available;
+          if (!scope.display.available) { publish(); return; }
           var hasBoost = scope.data.value !== null && scope.data.max !== null;
           var configuredMaxPsi = hasBoost ? scope.data.max : MIN_SCALE_MAX_PSI;
           var scaleMaxPsi = Math.max(MIN_SCALE_MAX_PSI, configuredMaxPsi);
@@ -266,7 +264,6 @@
           scope.display.maxDisplay = maxDisplay;
           scope.display.needleAngle = hasBoost ? scaleAngle(scope.data.value, minPsi, scaleMaxPsi) : SCALE_ZERO_ANGLE;
           scope.display.redlinePath = redlineBandPath(redlineStartAngle(configuredMaxPsi, scaleMaxPsi, hasBoost, scope.display.unit), SCALE_END_ANGLE, 215, 187);
-          scope.display.trackPath = arcPath(SCALE_START_ANGLE, SCALE_END_ANGLE, 207);
           scope.display.valueText = hasBoost ? formatPressure(scope.data.value, scope.display.unit) : '--.-';
           scope.display.valueX = digitalValueX(scope.display.valueText, scope.display.unit);
           scope.display.ghostText = ghostTextForUnit(scope.display.unit);
@@ -274,18 +271,18 @@
             scope.ticks = makeTicks(scaleMaxPsi, scope.display.unit);
             scope.labels = makeLabels(scaleMaxPsi, scope.display.unit);
           }
-          scope.$evalAsync();
-          requestAnimationFrame(updateDisplay);
+          publish();
         }
 
         scope.$on('streamsUpdate', function (event, streams) {
           scope.data = readBoost(streams && streams.electrics);
+          requestRender();
         });
 
         function resetVehicle() {
           scope.data = readBoost({});
+          requestRender();
           scope.display.available = false;
-          scope.$evalAsync();
         }
         scope.$on('VehicleChange', resetVehicle);
         scope.$on('VehicleFocusChanged', resetVehicle);
@@ -300,7 +297,7 @@
         scope.$on('$destroy', function () {
           live = false;
           StreamsManager.remove(streamsList);
-          if (stylesheet && stylesheet.parentNode) stylesheet.parentNode.removeChild(stylesheet);
+          if (stylesheet) stylesheet.release();
         });
 
         if (typeof bngApi !== 'undefined' && bngApi && typeof bngApi.engineLua === 'function') {

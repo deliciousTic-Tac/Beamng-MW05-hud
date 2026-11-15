@@ -35,7 +35,7 @@
   // A short time constant removes idle-RPM jitter without noticeably delaying
   // the needle when accelerating or lifting off.
   var RPM_NEEDLE_SMOOTHING_MS = 55;
-  var CSS_URL = '/ui/modules/apps/MW05VehicleHUD/app.css';
+  var CSS_URL = '/ui/modules/apps/MW05VehicleHUD/app.css?v=robust-20261109';
 
   function number(value, fallback) {
     var parsed = Number(value);
@@ -87,6 +87,23 @@
     return clamp(value > 1 ? value / 100 : value, 0, 1);
   }
 
+  function readNosState(values) {
+    if (values.nitrousOxideActive === true || values.nitrousOxideActive === 1) return 'active';
+    if (values.nitrousOxideArm === true || values.nitrousOxideArm === 1) return 'armed';
+    if (values.nitrousOxideArm === false || values.nitrousOxideArm === 0) return 'disarmed';
+    return null;
+  }
+
+  function nativeNosState(color) {
+    // Colors published by BeamNG's nitrousOxideInjection controller. This also
+    // supports vehicles that use custom electrics names for their NOS flags.
+    color = typeof color === 'string' ? color.replace(/^#/, '').toUpperCase() : '';
+    if (color === '3096F1') return 'active';
+    if (color === '98FB00') return 'armed';
+    if (color === 'FFFFFF') return 'disarmed';
+    return null;
+  }
+
   function readElectrics(values, engineInfo, thermalData) {
     values = values || {};
     engineInfo = engineInfo || [];
@@ -114,7 +131,9 @@
     shiftRpm = clamp(shiftRpm, 0, maxRpm);
     var fuel = typeof values.fuel === 'number' ? clamp(values.fuel, 0, 1) : null;
     var battery = findOptionalValue(values, /battery|charge|soc/i);
-    var nos = findOptionalValue(values, /nos|nitrous/i);
+    // Arm/active/override flags are not tank levels. The native button below
+    // remains authoritative for the real tank ratio when it is available.
+    var nos = findOptionalValue(values, /^(?:nos|nitrous)$|(?:nos|nitrous).*(?:level|ratio|percent)|(?:level|ratio|percent).*(?:nos|nitrous)/i);
     var temperature = findTemperature(values, thermalData);
     var tempC = temperature ? temperature.value : null;
     var hotOilFlag = values.oil === 1 || values.oil === true;
@@ -130,6 +149,7 @@
       gear: String(gear),
       fuel: fuel,
       nos: nos ? normalizePercent(nos.value) : null,
+      nosState: readNosState(values),
       tempC: typeof tempC === 'number' ? tempC : null,
       hotOilFlag: hotOilFlag,
       abs: number(values.abs, 0),
@@ -142,16 +162,7 @@
     };
   }
 
-  function addStylesheet(path) {
-    var link = document.querySelector('link[data-mw05-css="' + path + '"]');
-    if (link) return null;
-    link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = path;
-    link.setAttribute('data-mw05-css', path);
-    document.head.appendChild(link);
-    return link;
-  }
+  var addStylesheet = MW05Runtime.addStylesheet;
 
   function makeTicks(maxRpm) {
     var ticks = [];
@@ -255,9 +266,12 @@
 
   // Current BeamNG legacy apps expose StreamsManager globally; injecting it
   // through Angular fails on the current app service (Unknown provider).
+  arcPath = MW05Runtime.memoize(arcPath, 16);
+  redlineBandPath = MW05Runtime.memoize(redlineBandPath, 16);
+
   angular.module('beamng.apps').directive('mw05VehicleHud', [function () {
     return {
-      template: `
+      template: MW05Runtime.svgTemplate(`
         <div class="mw05-vehicle-hud">
           <svg class="mw05-hud-svg" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" aria-label="MW05 vehicle HUD">
             <defs>
@@ -274,7 +288,7 @@
             <circle class="mw05-hud-shadow" cx="256" cy="256" r="225"/>
             <circle class="mw05-hud-face" cx="256" cy="256" r="216" fill="url(#mw05DialGlass)"/>
             <path class="mw05-redline" ng-attr-d="{{display.redlinePath}}"/>
-            <g class="mw05-nos-arc" ng-if="display.hasNos">
+            <g class="mw05-nos-arc" ng-if="display.hasNos" ng-attr-data-state="{{display.nosState}}">
               <path class="mw05-nos-arc-track" fill="none" ng-attr-d="{{display.nosTrackPath}}"/>
               <path class="mw05-nos-arc-fill" ng-attr-d="{{display.nosLeftPath}}"/>
               <path class="mw05-nos-arc-fill" ng-attr-d="{{display.nosRightPath}}"/>
@@ -358,7 +372,7 @@
             </g>
           </svg>
           <div class="mw05-debug" ng-if="debug">Speed: {{data.speedKph | number:1}} km/h<br>RPM: {{data.rpm | number:0}}<br>Gear: {{data.gear}}<br>Fuel: {{data.fuel | number:2}}<br>Temp: {{data.tempC | number:1}}<br>NOS: {{data.nos | number:2}}<br>Keys: {{data.rawKeys.join(', ')}}</div>
-        </div>`,
+        </div>`),
       replace: true,
       restrict: 'EA',
       link: function (scope) {
@@ -385,6 +399,7 @@
           speedUnit: 'KM/H',
           gear: 'N',
           hasNos: false,
+          nosState: null,
           hasFuel: false,
           fuelLow: false,
           tempState: 'hidden',
@@ -398,13 +413,17 @@
           shiftHot: false
         };
         var live = true;
+        var requestRender = MW05Runtime.renderer(scope, updateDisplay);
+        var publish = MW05Runtime.publisher(scope);
         var nosLevelFromPowertrainButton;
+        var nosStateFromPowertrainButton;
         var smoothedNeedleAngle = -130;
         var lastNeedleFrameTime = null;
         var lastGameSpeedUnit = null;
 
         function setSpeedUnit(unit) {
           scope.display.speedUnit = unit === 'MPH' ? 'MPH' : 'KM/H';
+          requestRender();
         }
 
         scope.toggleSpeedUnit = function () {
@@ -423,6 +442,7 @@
             smoothedNeedleAngle += (targetNeedleAngle - smoothedNeedleAngle) * blend;
           }
           if (typeof frameTime === 'number') lastNeedleFrameTime = frameTime;
+          if (Math.abs(smoothedNeedleAngle - targetNeedleAngle) < 0.01) smoothedNeedleAngle = targetNeedleAngle;
           scope.display.needleAngle = smoothedNeedleAngle;
           if (scope.display.maxRpm !== scope.data.maxRpm) {
             scope.display.maxRpm = scope.data.maxRpm;
@@ -444,6 +464,7 @@
           scope.display.turnActive = scope.display.turnLeftActive || scope.display.turnRightActive;
           scope.display.shiftHot = scope.data.rpm >= scope.data.shiftRpm;
           scope.display.hasNos = scope.data.nos !== null;
+          scope.display.nosState = scope.data.nosState;
           scope.display.nosTrackPath = arcPath(142.5, 217.5, NOS_ARC_RADIUS, 1);
           var nosLevel = scope.data.nos === null ? 0 : clamp(scope.data.nos, 0, 1);
           var nosSpan = nosLevel * NOS_MAX_HALF_SPAN;
@@ -463,8 +484,8 @@
           }
           var tempRatio = scope.data.tempC === null ? (scope.data.hotOilFlag ? 1 : 0) : clamp((scope.data.tempC - TEMP_MIN_C) / (TEMP_MAX_C - TEMP_MIN_C), 0, 1);
           scope.display.tempPath = arcPath(-130, -130 + tempRatio * 100, 242, 1);
-          scope.$evalAsync();
-          requestAnimationFrame(updateDisplay);
+          publish();
+          if (smoothedNeedleAngle !== targetNeedleAngle) requestRender();
         }
 
         scope.$on('streamsUpdate', function (event, streams) {
@@ -472,6 +493,10 @@
           if (nosLevelFromPowertrainButton !== undefined) {
             scope.data.nos = nosLevelFromPowertrainButton;
           }
+          if (nosStateFromPowertrainButton !== undefined) {
+            scope.data.nosState = nosStateFromPowertrainButton;
+          }
+          requestRender();
         });
 
         // Ask BeamNG to send the current settings once when the app is added,
@@ -485,28 +510,54 @@
           lastGameSpeedUnit = gameUnit;
         });
 
-        // BeamNG exposes the real nitrous tank level through the native
-        // powertrain button event, not through the electrics stream.
+        // Native NOS events report the tank ratio and the confirmed operating
+        // state together. A state-only event must not erase the stored level.
         scope.$on('ChangePowerTrainButtons', function (event, button) {
           if (!button || button.icon !== 'powertrain_n2o') return;
           // Removing the native button is a UI-state event, not proof that
           // the tank is empty. Keep the last real level until a new value is received.
           if (button.remove) return;
           var nextNosLevel = normalizePercent(button.ringValue);
-          if (nextNosLevel === null) return;
-          nosLevelFromPowertrainButton = nextNosLevel;
-          scope.data.nos = nextNosLevel;
+          var nextNosState = nativeNosState(button.color);
+          if (nextNosLevel !== null) {
+            nosLevelFromPowertrainButton = nextNosLevel;
+            scope.data.nos = nextNosLevel;
+          }
+          if (nextNosState !== null) {
+            nosStateFromPowertrainButton = nextNosState;
+            scope.data.nosState = nextNosState;
+          }
+          if (nextNosLevel === null && nextNosState === null) return;
+          requestRender();
         });
+
+        function requestNativeNosState() {
+          if (live && typeof bngApi !== 'undefined' && bngApi && typeof bngApi.activeObjectLua === 'function') {
+            bngApi.activeObjectLua('extensions.ui_simplePowertrainControl.updateButtons()');
+          }
+        }
+
+        function resetVehicle() {
+          nosLevelFromPowertrainButton = undefined;
+          nosStateFromPowertrainButton = undefined;
+          lastNeedleFrameTime = null;
+          scope.data = readElectrics({}, []);
+          requestRender();
+          requestNativeNosState();
+        }
+        scope.$on('VehicleChange', resetVehicle);
+        scope.$on('VehicleFocusChanged', resetVehicle);
 
         scope.$on('$destroy', function () {
           live = false;
           StreamsManager.remove(streamsList);
-          if (stylesheet && stylesheet.parentNode) stylesheet.parentNode.removeChild(stylesheet);
+          if (stylesheet) stylesheet.release();
         });
         if (typeof bngApi !== 'undefined' && bngApi && typeof bngApi.engineLua === 'function') {
           bngApi.engineLua('settings.notifyUI()');
         }
-        requestAnimationFrame(updateDisplay);
+        requestNativeNosState();
+        requestRender();
       }
     };
   }]);

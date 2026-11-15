@@ -4,7 +4,7 @@
 
   // Revision suffix bypasses BeamNG UI's cached stylesheet when the app is
   // reloaded with Ctrl+L after a visual update.
-  var CSS_URL = '/ui/modules/apps/MW05Ignition/app.css?v=metal-esc-8';
+  var CSS_URL = '/ui/modules/apps/MW05Ignition/app.css?v=robust-20261109';
 
   function number(value, fallback) {
     var parsed = Number(value);
@@ -26,20 +26,11 @@
     return { mode:'OFF', angle:-58, caption:'CONTACT COUPÉ', engineRunning:false };
   }
 
-  function addStylesheet(path) {
-    var link = document.querySelector('link[data-mw05-css="' + path + '"]');
-    if (link) return null;
-    link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = path;
-    link.setAttribute('data-mw05-css', path);
-    document.head.appendChild(link);
-    return link;
-  }
+  var addStylesheet = MW05Runtime.addStylesheet;
 
   angular.module('beamng.apps').directive('mw05Ignition', [function () {
     return {
-      template: `
+      template: MW05Runtime.svgTemplate(`
         <div class="mw05-ignition">
           <svg class="mw05-ignition-svg" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" aria-label="Contact moteur" role="button" ng-mousedown="beginStart($event)">
             <defs>
@@ -79,7 +70,7 @@
               <use fill="#343434" width="36" height="36" ng-attr-href="{{escButton.href}}"/>
             </svg>
           </button>
-        </div>`,
+        </div>`),
       replace: true,
       restrict: 'EA',
       link: function (scope) {
@@ -184,7 +175,7 @@
         scope.$on('$destroy', function () {
           window.removeEventListener('mouseup', scope.endStart);
           StreamsManager.remove(streamsList);
-          if (stylesheet && stylesheet.parentNode) stylesheet.parentNode.removeChild(stylesheet);
+          if (stylesheet) stylesheet.release();
         });
       }
     };

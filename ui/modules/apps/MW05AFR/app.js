@@ -66,16 +66,7 @@
     return { value: clamp(estimatedAfr, 10, 18), source: 'calculated', estimated: true, keys: Object.keys(electrics || {}) };
   }
 
-  function addStylesheet(path) {
-    var link = document.querySelector('link[data-mw05-css="' + path + '"]');
-    if (link) return null;
-    link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = path;
-    link.setAttribute('data-mw05-css', path);
-    document.head.appendChild(link);
-    return link;
-  }
+  var addStylesheet = MW05Runtime.addStylesheet;
 
   angular.module('beamng.apps').directive('mw05Afr', [function () {
     return {
@@ -101,7 +92,11 @@
         var latestLuaData = {};
         var api = typeof bngApi !== 'undefined' ? bngApi :
           (typeof window !== 'undefined' && window.bngApi ? window.bngApi : null);
+        var lua = MW05Runtime.luaClient(scope, api);
         var live = true;
+        var requestRender = MW05Runtime.renderer(scope, updateDisplay);
+        var publish = MW05Runtime.publisher(scope);
+        var vehicleState = MW05Runtime.vehicleState(scope, resetVehicle);
         var pollTimer = null;
         var resizeObserver = null;
         var resizeFallback = false;
@@ -123,16 +118,18 @@
         function updateDisplay() {
           if (!live) return;
           scope.display.valueText = scope.data.value === null ? '--.-' : scope.data.value.toFixed(1);
-          scope.$evalAsync();
-          requestAnimationFrame(updateDisplay);
+          publish();
         }
 
         function pollAfr() {
           if (!live) return;
           if (api && typeof api.activeObjectLua === 'function') {
-            api.activeObjectLua(afrLuaQuery, function (data) {
+            var accept = vehicleState.capture();
+            lua.request('afr', afrLuaQuery, function (data) {
+              if (!accept()) return;
               latestLuaData = data || {};
               scope.data = readAfr(latestElectrics, latestLuaData, latestEngineInfo);
+              requestRender();
             });
           }
           pollTimer = setTimeout(pollAfr, 250);
@@ -142,7 +139,14 @@
           latestElectrics = streams && streams.electrics || {};
           latestEngineInfo = streams && streams.engineInfo || [];
           scope.data = readAfr(latestElectrics, latestLuaData, latestEngineInfo);
+          requestRender();
         });
+
+        function resetVehicle() {
+          latestElectrics = {}; latestEngineInfo = []; latestLuaData = {};
+          scope.data = readAfr({}, {}, []);
+          requestRender();
+        }
 
         scope.$on('$destroy', function () {
           live = false;
@@ -150,7 +154,7 @@
           if (resizeObserver) resizeObserver.disconnect();
           if (resizeFallback) window.removeEventListener('resize', resizeText);
           StreamsManager.remove(streamsList);
-          if (stylesheet && stylesheet.parentNode) stylesheet.parentNode.removeChild(stylesheet);
+          if (stylesheet) stylesheet.release();
         });
         if (typeof ResizeObserver !== 'undefined') {
           resizeObserver = new ResizeObserver(resizeText);

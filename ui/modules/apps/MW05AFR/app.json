@@ -2,7 +2,7 @@
   "name": "MW05 AFR",
   "appName": "MW05AFR",
   "author": "DeliciousTic-Tac",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Digital air-fuel ratio display",
   "directive": "mw05Afr",
   "domElement": "<mw05-afr></mw05-afr>",

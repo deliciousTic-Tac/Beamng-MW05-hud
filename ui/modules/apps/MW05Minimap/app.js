@@ -11,16 +11,7 @@
 
   var CSS_URL = '/ui/modules/apps/MW05Minimap/app.css';
 
-  function addStylesheet(path) {
-    var link = document.querySelector('link[data-mw05-css="' + path + '"]');
-    if (link) return null;
-    link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = path;
-    link.setAttribute('data-mw05-css', path);
-    document.head.appendChild(link);
-    return link;
-  }
+  var addStylesheet = MW05Runtime.addStylesheet;
 
   angular.module('beamng.apps').directive('mw05Minimap', [function () {
     return {
@@ -39,6 +30,7 @@
         var frameId = null;
         var live = true;
         var lastTransform = '';
+        var lastSize = null;
 
         // Load the same renderer used by BeamNG's Navigation app.
         bngApi.engineLua('extensions.load("ui_apps_minimap_minimap")');
@@ -53,7 +45,10 @@
           // Keep the native renderer square, like BeamNG's circular Navigation app,
           // even when the user places the app in a rectangular layout slot.
           var size = Math.min(rect.width, rect.height);
-          root.style.setProperty('--mw05-map-size', size + 'px');
+          if (size !== lastSize) {
+            root.style.setProperty('--mw05-map-size', size + 'px');
+            lastSize = size;
+          }
           var x = (rect.left + (rect.width - size) / 2) / screenWidth;
           var y = (rect.top + (rect.height - size) / 2) / screenHeight;
           var width = size / screenWidth;
@@ -78,7 +73,7 @@
           live = false;
           if (frameId) cancelAnimationFrame(frameId);
           bngApi.engineLua('if ui_apps_minimap_minimap then ui_apps_minimap_minimap.hide() end');
-          if (stylesheet && stylesheet.parentNode) stylesheet.parentNode.removeChild(stylesheet);
+          if (stylesheet) stylesheet.release();
         });
 
         frame();

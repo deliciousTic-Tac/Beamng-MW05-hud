@@ -2,7 +2,7 @@
 
 ## Installation
 
-1. Download `MW05BeamNG.zip` from the [latest GitHub release](https://github.com/deliciousTic-Tac/MW05Beamng/releases/latest).
+1. Download `MW05BeamNG.zip` from the [latest GitHub release](https://github.com/deliciousTic-Tac/Beamng-MW05-hud/releases/latest).
 2. Place the ZIP directly in `beamng\current\mods`, the `mods` folder inside your active BeamNG user folder. Do not extract it.
 
 ```text
@@ -24,6 +24,6 @@ The ZIP contains all 10 MW05 applications and their resources under `ui/modules/
 - Check the display at 0, 50, 130, and 200+ km/h.
 - Check idle, mid-range RPM, the rev limiter, reverse, neutral, and rapid gear changes.
 - Test a fuel-powered vehicle, an electric vehicle, and a vehicle without NOS.
-- Test a turbocharged/supercharged vehicle and a naturally aspirated vehicle: the boost pressure display and the app must remain hidden if `boost` is not exposed.
+- Test a turbocharged/supercharged vehicle and a naturally aspirated vehicle: the boost app is hidden when the vehicle has no positive configured `boostMax`, and stays visible at zero boost when forced induction is installed.
 
 The numeric temperature display and NOS remain hidden if the vehicle does not expose a corresponding value in `electrics`. This is intentional to avoid displaying fabricated data.

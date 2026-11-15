@@ -62,3 +62,19 @@ At the time of this analysis, the output ZIP at the workspace root was the artif
 ## Limitation
 
 Potential use of files by BeamNG or by another tool outside the directory cannot be proven through local static analysis. Files marked as unreferenced are therefore potentially unused in this project; this does not prove that they are unused throughout the BeamNG environment.
+# Mise à jour de maintenance — 6 novembre 2026
+
+Les notes ci-dessous sont historiques. Le dépôt actuel contient dix applications,
+un historique Git, `build.ps1`, `lib/runtime.js` et `tests/regression.js`.
+Le build inclut uniquement les ressources sous `ui/` et intègre le runtime commun
+dans chaque `app.js` ; les fichiers de développement ne sont pas distribués.
+
+Corrections : angles finis à zéro ; remise à zéro du NOS et des caches au changement
+de véhicule ; rejet des réponses Lua anciennes, désordonnées ou reçues après suppression.
+Optimisations : rendu à la demande pour les jauges sans animation continue, mises à
+jour Angular uniquement lorsque l'affichage change, caches SVG bornés et vérifications
+Powertrain espacées à 500 ms avec actualisation rapide après commande.
+
+Les calculs AFR, pression d'huile et voltage existants sont conservés faute de données
+physiques standard permettant de les remplacer par des calculs exacts. Aucun gain FPS
+n'est revendiqué : la validation locale porte sur les comportements et le packaging.

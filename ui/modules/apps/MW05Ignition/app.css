@@ -3,12 +3,12 @@
 .mw05-ignition-shadow { fill:#07090b; fill-opacity:.62; }
 .mw05-ignition-backplate { fill:#1d2024; stroke:#0a0b0d; stroke-width:10; }
 .mw05-ignition-ring { fill:#282c31; stroke:#777d85; stroke-width:4; }
-.mw05-ignition-inner { fill:url(#mw05IgnitionMetal); stroke:#151a1e; stroke-width:7; }
+.mw05-ignition-inner { fill:var(--mw05IgnitionMetal); stroke:#151a1e; stroke-width:7; }
 .mw05-ignition-brushed { fill:none; stroke:#eef1f2; stroke-width:1.4; stroke-opacity:.2; stroke-dasharray:3 5; }
 .mw05-ignition-scale { fill:none; stroke:#6c737b; stroke-width:3; stroke-linecap:round; }
 .mw05-ignition-mark { fill:#c7cbd0; font:700 23px Arial,sans-serif; text-anchor:middle; letter-spacing:1px; }
 .mw05-ignition-mark-acc { font-size:20px; }
-.mw05-ignition-mark.is-active { fill:#ffab63; filter:url(#mw05IgnitionGlow); }
+.mw05-ignition-mark.is-active { fill:#ffab63; filter:var(--mw05IgnitionGlow); }
 .mw05-key { transform-origin:256px 256px; transition:transform 150ms cubic-bezier(.2,.8,.25,1); }
 .mw05-key-shaft { fill:#171a1e; stroke:#050607; stroke-width:7; stroke-linejoin:round; }
 .mw05-key-facet { fill:#4a515a; fill-opacity:.68; }
